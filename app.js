@@ -4,7 +4,7 @@ import "../stylesheets/app.css";
 // Import libraries we need.
 import { default as Web3} from 'web3';
 import { default as contract } from 'truffle-contract'
-
+import $ "jquery" ;
 // Import our contract artifacts and turn them into usable abstractions.
 import tictactoe_artifacts from '../../build/contracts/TicTacToe.json'
 
@@ -43,9 +43,22 @@ window.App = {
 
     });
   },
+
+  useAccountOne: function(){
+    account = accounts[1];
+  }
 createNewGame: function() {
   TickTacTow.new({from:account,value.web3.toWei(0.1,"ether"),gas:300000000}).then(instance=> {
 tictacktoeinstance = instance;
+//seting the onClick handler
+
+for(var i = 0;i<3;i++){
+  for(var j=0;j<3;j++){
+    //the above is because the site has to be responsive 9 times
+    $($("#board")[0].children[i].children[j]).off('click').click({x: i, y:j}, App.setStore);
+  }
+}
+
 console.log(instance);
 }).catch(err => {
   console.log(err)
@@ -59,11 +72,26 @@ joinGame: function() {
       tictacktoeinstance = instance
 return tictacktoeinstance.joinGame({from:account,value.web3.toWei(0.1,"ether"),gas:300000000})
 }).then(txResult =>{
+  //seting the onClick handler
+
+  for(var i = 0;i<3;i++){
+    for(var j=0;j<3;j++){
+      //the above is because the site has to be responsive 9 times
+      $($("#board")[0].children[i].children[j]).off('click').click({x: i, y:j}, App.setStore);
+    }
+  }
+
   console.log(txResult)
 })
   }
 },
+setStone: funtion(event){
+  console.log(event);
+  tictacktoeinstance..setState.(event.data.x,event.data.y).then(txResult =>{
+    console.log(txResult);
+  })
 
+}
 
 
 window.addEventListener('load', function() {
