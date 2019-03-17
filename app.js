@@ -85,10 +85,26 @@ return tictacktoeinstance.joinGame({from:account,value.web3.toWei(0.1,"ether"),g
 })
   }
 },
+printBoard:funtion() {
+  tictacktoeinstance.getBoard.call().then(board =>{
+    for(var i = 0;i<3;i++){
+      for(var j=0;j<3;j++){
+        //the above is because the site has to be responsive 9 times
+if(board[i][j] == account){
+        $("#board")[0].children[0].children[i].children[j]).innerHtml = "X");
+} elseif(board[i][j] != 0) {
+        $("#board")[0].children[0].children[i].children[j]).innerHtml = "O");
+}
+      }
+    }
+
+  })
+},
 setStone: funtion(event){
   console.log(event);
-  tictacktoeinstance..setState.(event.data.x,event.data.y,{from:account}).then(txResult =>{
+  tictacktoeinstance.setState.(event.data.x,event.data.y,{from:account}).then(txResult =>{
     console.log(txResult);
+    App.printBoard
   })
 
 },
