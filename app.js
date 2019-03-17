@@ -16,6 +16,7 @@ var TicTacToe = contract(tictactoe_artifacts);
 // For application bootstrapping, check out window.addEventListener below.
 var accounts;
 var account;
+var tictacktoeinstance;
 
 window.App = {
   start: function() {
@@ -43,11 +44,24 @@ window.App = {
     });
   },
 createNewGame: function() {
-  console.log('Create Game called')
+  TickTacTow.new({from:account,value.web3.toWei(0.1,"ether"),gas:300000000}).then(instance=> {
+tictacktoeinstance = instance;
+console.log(instance);
+}).catch(err => {
+  console.log(err)
+})
 },
 
 joinGame: function() {
-  console.log('Join Game called')
+  var gameAddress = prompt("address of the game");
+  if(gameAddress != null) {
+    TicTacToe.at(gameAddress).then( instance =>{
+      tictacktoeinstance = instance
+return tictacktoeinstance.joinGame({from:account,value.web3.toWei(0.1,"ether"),gas:300000000})
+}).then(txResult =>{
+  console.log(txResult)
+})
+  }
 },
 
 
