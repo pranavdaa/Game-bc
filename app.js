@@ -4,7 +4,8 @@ import "../stylesheets/app.css";
 // Import libraries we need.
 import { default as Web3} from 'web3';
 import { default as contract } from 'truffle-contract'
-import $ "jquery" ;
+import $ from "jquery";
+
 // Import our contract artifacts and turn them into usable abstractions.
 import tictactoe_artifacts from '../../build/contracts/TicTacToe.json'
 
@@ -16,7 +17,11 @@ var TicTacToe = contract(tictactoe_artifacts);
 // For application bootstrapping, check out window.addEventListener below.
 var accounts;
 var account;
-var tictacktoeinstance;
+var ticTacToeInstance;
+var nextPlayerEvent;
+var gameOverWithWinEvent;
+var gameOverWithDrawEvent;
+var arrEventsFired;
 
 window.App = {
   start: function() {
@@ -39,105 +44,158 @@ window.App = {
 
       accounts = accs;
       account = accounts[0];
-
+      arrEventsFired = [];
 
     });
   },
-
-  useAccountOne: function(){
+  useAccountOne: function() {
     account = accounts[1];
-  }
-createNewGame: function() {
-  TickTacTow.new({from:account,value.web3.toWei(0.1,"ether"),gas:300000000}).then(instance=> {
-tictacktoeinstance = instance;
-//seting the onClick handler
+  },
+  createNewGame: function() {
+    TicTacToe.new({from:account, value:web3.toWei(0.1,"ether"), gas:3000000}).then(instance => {
+      ticTacToeInstance = instance;
 
-var playerjoinedEvent = tictacktoeinstance.PlayerJoined();
+      console.log(instance);
+      $(".in-game").show();
+      $(".waiting-for-join").hide();
+      $(".game-start").hide();
+      $("#game-address").text(instance.address);
+      $("#waiting").show();
 
-if(!error) {
-  console.log(eventObj);
-  for(var i = 0;i<3;i++){
-    for(var j=0;j<3;j++){
-      //the above is because the site has to be responsive 9 times
-      $($("#board")[0].children[i].children[j]).off('click').click({x: i, y:j}, App.setStore);
+      var playerJoinedEvent = ticTacToeInstance.PlayerJoined();
+
+      playerJoinedEvent.watch(function(error, eventObj) {
+        if(!error) {
+          console.log(eventObj);
+        } else {
+          console.error(error);
+        }
+        $(".waiting-for-join").show();
+        $("#opponent-address").text(eventObj.args.player);
+        $("#your-turn").hide();
+        playerJoinedEvent.stopWatching();
+
+      });
+      App.listenToEvents();
+      console.log(instance);
+    }).catch(error => {
+      console.error(error);
+    })
+  },
+  joinGame: function() {
+    var gameAddress = prompt("Address of the Game");
+    if(gameAddress != null) {
+      TicTacToe.at(gameAddress).then(instance => {
+        ticTacToeInstance = instance;
+
+        App.listenToEvents();
+
+        return ticTacToeInstance.joinGame({from:account, value:web3.toWei(0.1, "ether"), gas:3000000});
+      }).then(txResult => {
+        $(".in-game").show();
+        $(".game-start").hide();
+        $("#game-address").text(ticTacToeInstance.address);
+        $("#your-turn").hide();
+        ticTacToeInstance.player1.call().then(player1Address => {
+          $("#opponent-address").text(player1Address);
+        })
+        console.log(txResult);
+      })
     }
-  }
+  },
+  listenToEvents: function() {
+    nextPlayerEvent = ticTacToeInstance.NextPlayer();
+    nextPlayerEvent.watch(App.nextPlayer);
 
-}
+    gameOverWithWinEvent = ticTacToeInstance.GameOverWithWin();
+    gameOverWithWinEvent.watch(App.gameOver);
 
+    gameOverWithDrawEvent = ticTacToeInstance.GameOverWithDraw();
+    gameOverWithDrawEvent.watch(App.gameOver);
+  },
+  nextPlayer: function(error, eventObj) {
+    if(arrEventsFired.indexOf(eventObj.blockNumber) === -1) {
+      arrEventsFired.push(eventObj.blockNumber);
+      App.printBoard();
+      console.log(eventObj);
 
-console.log(instance);
-}).catch(err => {
-  console.log(err)
-})
-},
+      if(eventObj.args.player == account) {
+        //our turn
+        /**
+        Set the On-Click Handler
+        **/
+        for(var i = 0; i < 3; i++) {
+          for(var j = 0; j < 3; j++) {
+            if($("#board")[0].children[0].children[i].children[j].innerHTML == "") {
+              $($("#board")[0].children[0].children[i].children[j]).off('click').click({x: i, y:j}, App.setStone);
+            }
+          }
+        }
+        $("#your-turn").show();
+        $("#waiting").hide();
+      } else {
+        //opponents turn
 
-joinGame: function() {
-  var gameAddress = prompt("address of the game");
-  if(gameAddress != null) {
-    TicTacToe.at(gameAddress).then( instance =>{
-      tictacktoeinstance = instance
-return tictacktoeinstance.joinGame({from:account,value.web3.toWei(0.1,"ether"),gas:300000000})
-}).then(txResult =>{
-  //seting the onClick handler
+        $("#your-turn").hide();
+        $("#waiting").show();
+      }
 
-  for(var i = 0;i<3;i++){
-    for(var j=0;j<3;j++){
-      //the above is because the site has to be responsive 9 times
-      $($("#board")[0].children[i].children[j]).off('click').click({x: i, y:j}, App.setStore);
     }
-  }
-
-  console.log(txResult)
-})
-  }
-},
-nextPlayer:function(error,eventObj){
-  App.printBoard();
-  if(eventObj.args.player == account) {
-  // our turn
-  for(var i = 0;i<3;i++){
-    for(var j=0;j<3;j++){
-      //the above is because the site has to be responsive 9 times
-      $($("#board")[0].children[i].children[j]).off('click').click({x: i, y:j}, App.setStore);
+  },
+  gameOver: function(err, eventObj) {
+    console.log("Game Over", eventObj);
+    if(eventObj.event == "GameOverWithWin") {
+      if(eventObj.args.winner == account) {
+        alert("Congratulations, You Won!");
+      } else {
+        alert("Woops, you lost! Try again...");
+      }
+    } else {
+      alert("That's a draw, oh my... next time you do beat'em!");
     }
-  }
-  }
-  else {
 
-    //opponents turn(so remove the onClick handler)
-  }
-},
-printBoard:funtion() {
-  tictacktoeinstance.getBoard.call().then(board =>{
-    for(var i = 0;i<3;i++){
-      for(var j=0;j<3;j++){
-        //the above is because the site has to be responsive 9 times
-if(board[i][j] == account){
-        $("#board")[0].children[0].children[i].children[j]).innerHtml = "X");
-} elseif(board[i][j] != 0) {
-        $("#board")[0].children[0].children[i].children[j]).innerHtml = "O");
-}
+
+    nextPlayerEvent.stopWatching();
+    gameOverWithWinEvent.stopWatching();
+    gameOverWithDrawEvent.stopWatching();
+
+    for(var i = 0; i < 3; i++) {
+      for(var j = 0; j < 3; j++) {
+            $("#board")[0].children[0].children[i].children[j].innerHTML = "";
       }
     }
 
-  })
-},
-setStone: funtion(event){
-  console.log(event);
-  for(var i = 0;i<3;i++){
-    for(var j=0;j<3;j++){
-      //the above is because the site has to be responsive 9 times
-      $($("#board")[0].children[i].children[j]).prop('onclick',null).off('click');
+      $(".in-game").hide();
+      $(".game-start").show();
+  },
+  setStone: function(event) {
+    console.log(event);
+
+    for(var i = 0; i < 3; i++) {
+      for(var j = 0; j < 3; j++) {
+        $($("#board")[0].children[0].children[i].children[j]).prop('onclick',null).off('click');
+      }
     }
+
+    ticTacToeInstance.setStone(event.data.x, event.data.y, {from: account}).then(txResult => {
+      console.log(txResult);
+      App.printBoard();
+    })
+  },
+  printBoard: function() {
+    ticTacToeInstance.getBoard.call().then(board => {
+      for(var i=0; i < board.length; i++) {
+        for(var j=0; j < board[i].length; j++) {
+          if(board[i][j] == account) {
+            $("#board")[0].children[0].children[i].children[j].innerHTML = "X";
+          } else if(board[i][j] != 0) {
+              $("#board")[0].children[0].children[i].children[j].innerHTML = "O";
+          }
+        }
+      }
+    });
   }
-  tictacktoeinstance.setState.(event.data.x,event.data.y,{from:account}).then(txResult =>{
-    console.log(txResult);
-    App.printBoard
-  })
-
-},
-
+};
 
 window.addEventListener('load', function() {
   // Checking if Web3 has been injected by the browser (Mist/MetaMask)
