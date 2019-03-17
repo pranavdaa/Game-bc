@@ -87,11 +87,11 @@ return tictacktoeinstance.joinGame({from:account,value.web3.toWei(0.1,"ether"),g
 },
 setStone: funtion(event){
   console.log(event);
-  tictacktoeinstance..setState.(event.data.x,event.data.y).then(txResult =>{
+  tictacktoeinstance..setState.(event.data.x,event.data.y,{from:account}).then(txResult =>{
     console.log(txResult);
   })
 
-}
+},
 
 
 window.addEventListener('load', function() {
