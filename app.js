@@ -52,12 +52,19 @@ createNewGame: function() {
 tictacktoeinstance = instance;
 //seting the onClick handler
 
-for(var i = 0;i<3;i++){
-  for(var j=0;j<3;j++){
-    //the above is because the site has to be responsive 9 times
-    $($("#board")[0].children[i].children[j]).off('click').click({x: i, y:j}, App.setStore);
+var playerjoinedEvent = tictacktoeinstance.PlayerJoined();
+
+if(!error) {
+  console.log(eventObj);
+  for(var i = 0;i<3;i++){
+    for(var j=0;j<3;j++){
+      //the above is because the site has to be responsive 9 times
+      $($("#board")[0].children[i].children[j]).off('click').click({x: i, y:j}, App.setStore);
+    }
   }
+
 }
+
 
 console.log(instance);
 }).catch(err => {
@@ -85,6 +92,22 @@ return tictacktoeinstance.joinGame({from:account,value.web3.toWei(0.1,"ether"),g
 })
   }
 },
+nextPlayer:function(error,eventObj){
+  App.printBoard();
+  if(eventObj.args.player == account) {
+  // our turn
+  for(var i = 0;i<3;i++){
+    for(var j=0;j<3;j++){
+      //the above is because the site has to be responsive 9 times
+      $($("#board")[0].children[i].children[j]).off('click').click({x: i, y:j}, App.setStore);
+    }
+  }
+  }
+  else {
+
+    //opponents turn(so remove the onClick handler)
+  }
+},
 printBoard:funtion() {
   tictacktoeinstance.getBoard.call().then(board =>{
     for(var i = 0;i<3;i++){
@@ -102,6 +125,12 @@ if(board[i][j] == account){
 },
 setStone: funtion(event){
   console.log(event);
+  for(var i = 0;i<3;i++){
+    for(var j=0;j<3;j++){
+      //the above is because the site has to be responsive 9 times
+      $($("#board")[0].children[i].children[j]).prop('onclick',null).off('click');
+    }
+  }
   tictacktoeinstance.setState.(event.data.x,event.data.y,{from:account}).then(txResult =>{
     console.log(txResult);
     App.printBoard
